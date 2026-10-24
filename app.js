@@ -1,4 +1,4 @@
-/* Omni-Time — Copyright (c) 2026 Ferrus Dantioch
+/* Omni-Time — © 2026 Ferrus Dantioch
    Licence : Creative Commons BY-NC-ND 4.0 (texte complet dans le fichier LICENSE)
    https://creativecommons.org/licenses/by-nc-nd/4.0/ */
 
@@ -12,7 +12,7 @@
 
 /* Numéro de version affiché dans « À propos ». À changer à chaque
    nouvelle version publiée (en même temps que CACHE dans sw.js). */
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 
 /* ---------- 1. Navigation entre les écrans ----------
    Chaque écran est une <section class="vue" data-vue="…">.

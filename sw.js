@@ -1,4 +1,4 @@
-/* Omni-Time — Copyright (c) 2026 Ferrus Dantioch
+/* Omni-Time — © 2026 Ferrus Dantioch
    Licence : Creative Commons BY-NC-ND 4.0 (texte complet dans le fichier LICENSE)
    https://creativecommons.org/licenses/by-nc-nd/4.0/ */
 
@@ -10,7 +10,7 @@
 /* ⚠️ À augmenter d'un cran (v1 → v2…) à CHAQUE modification d'un fichier
    de la liste FICHIERS ci-dessous. Sinon, les téléphones qui ont déjà
    ouvert l'application gardent l'ancienne version. */
-const CACHE = 'omni-time-v2';
+const CACHE = 'omni-time-v3';
 
 /* Le début du nom de cache propre à Omni-Time. Toutes les applications de
    ferrusdantioch.github.io partagent la même adresse de site, donc le même

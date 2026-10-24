@@ -1,4 +1,4 @@
-/* Omni-Time — Copyright (c) 2026 Ferrus Dantioch
+/* Omni-Time — © 2026 Ferrus Dantioch
    Licence : Creative Commons BY-NC-ND 4.0 (texte complet dans le fichier LICENSE)
    https://creativecommons.org/licenses/by-nc-nd/4.0/ */
 
