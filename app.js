@@ -12,7 +12,7 @@
 
 /* Numéro de version affiché dans « À propos ». À changer à chaque
    nouvelle version publiée (en même temps que CACHE dans sw.js). */
-const VERSION = '1.0';
+const VERSION = '1.0.1';
 
 /* ---------- 1. Navigation entre les écrans ----------
    Chaque écran est une <section class="vue" data-vue="…">.

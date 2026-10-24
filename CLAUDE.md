@@ -16,8 +16,8 @@ Minuteur, Création / modification d'une séance, Séance en cours, Réglages,
   l'application, ni dans la documentation). Seul le pseudonyme **Ferrus
   Dantioch** est utilisé.
 - **Licence : Creative Commons BY-NC-ND 4.0**, la même que L'Atelier.
-  `LICENSE` est une copie exacte de celui de L'Atelier
-  (`Copyright (c) 2026 Ferrus Dantioch`). Chaque fichier de code (HTML, CSS,
+  `LICENSE` est une copie exacte de celui de L'Atelier (première ligne :
+  `© 2026 Ferrus Dantioch`, puis textes officiels anglais et français). Chaque fichier de code (HTML, CSS,
   JS) commence par la même mention de trois lignes ; `manifest.json` n'en a
   pas (le format JSON n'accepte pas les commentaires). Tout nouveau fichier
   de code reçoit la même mention. La page À propos résume la licence.
