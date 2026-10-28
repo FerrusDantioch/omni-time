@@ -52,6 +52,13 @@ Minuteur, Création / modification d'une séance, Séance en cours, Réglages,
   lentes (400 ms), aucun clignotement.
 - **Aucun compte, aucun appel réseau, aucun traceur.** Tout est en
   `localStorage`.
+- **Nouvelle version : jamais de changement par surprise.** Elle attend un
+  appui sur « Mettre à jour » (`#bandeau-mise-a-jour`, accueil seulement,
+  avec « Plus tard » ; objet `MiseAJour` d'`app.js`), caché pendant une
+  séance ou un minuteur qui tourne (la page rechargée ne pourrait plus
+  biper avant un appui). Pas de `self.skipWaiting()` dans l'installation
+  de `sw.js` (seulement au message `{ type: 'activer' }`), et le `fetch`
+  ne remplace jamais en arrière-plan un fichier rangé dans le cache.
 
 ## Même adresse de site que les autres applications
 

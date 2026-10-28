@@ -72,6 +72,22 @@
     <button type="button" class="bouton bouton-principal large" data-action="revenir-seance">Revenir à la séance</button>
   </div>
 
+  <!-- Nouvelle version prête : rien ne change tant que la personne n'a pas
+       touché « Mettre à jour ». Caché pendant une séance ou un minuteur
+       (voir MiseAJour dans app.js). -->
+  <div id="bandeau-mise-a-jour" class="bandeau" hidden>
+    <p>
+      <strong>Une nouvelle version d'Omni-Time est prête</strong><br>
+      Tu choisis le moment. Tes séances et tes réglages restent tels quels.<br>
+      <small>Si tu fermes complètement Omni-Time, la nouvelle version sera là
+      à la prochaine ouverture.</small>
+    </p>
+    <div class="rangee-2">
+      <button type="button" class="bouton bouton-principal" data-action="mettre-a-jour">Mettre à jour</button>
+      <button type="button" class="bouton" data-action="plus-tard">Plus tard</button>
+    </div>
+  </div>
+
   <div class="tuiles">
     <button type="button" class="tuile" id="tuile-chrono" data-aller="chrono">
       <!-- Petit dessin de chronomètre -->
