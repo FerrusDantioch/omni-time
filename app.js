@@ -12,7 +12,7 @@
 
 /* Numéro de version affiché dans « À propos ». À changer à chaque
    nouvelle version publiée (en même temps que CACHE dans sw.js). */
-const VERSION = '1.0.2';
+const VERSION = '1.0.3';
 
 /* ---------- 1. Navigation entre les écrans ----------
    Chaque écran est une <section class="vue" data-vue="…">.
@@ -41,7 +41,7 @@ function afficherVue(nom) {
 
   // Remet chaque écran à jour au moment où on l'ouvre
   switch (nom) {
-    case 'accueil':  Seances.afficherListe(); Seances.majAccueil(); break;
+    case 'accueil':  Seances.afficherListe(); Seances.majAccueil(); MiseAJour.majBandeau(); break;
     case 'chrono':   Chrono.afficher(); break;
     case 'minuteur': Minuteur.afficher(); break;
     case 'seance':   Lecteur.afficher(); break;
@@ -105,7 +105,7 @@ const Horloge = {
     Lecteur.tick();
     Minuteur.tick();
     if (vueActive === 'chrono' && Chrono.enMarche()) Chrono.afficherTemps();
-    if (vueActive === 'accueil') Seances.majAccueil();
+    if (vueActive === 'accueil') { Seances.majAccueil(); MiseAJour.majBandeau(); }
     this.verifier();
   }
 };
@@ -220,6 +220,10 @@ document.addEventListener('click', (e) => {
     case 'retour':              revenir(); break;
     case 'revenir-seance':      allerA('seance'); break;
 
+    // Nouvelle version
+    case 'mettre-a-jour':       MiseAJour.appliquer(cible); break;
+    case 'plus-tard':           MiseAJour.repousser(); break;
+
     // Séances
     case 'nouvelle-seance':     Editeur.ouvrir(null); break;
     case 'demarrer':            Seances.demarrer(id); break;
@@ -269,7 +273,63 @@ document.addEventListener('click', (e) => {
 });
 
 
-/* ---------- 6. Démarrage ---------- */
+/* ---------- 6. Nouvelle version ----------
+   Le service worker télécharge une nouvelle version en arrière-plan,
+   puis ATTEND : rien ne change par surprise. L'accueil le dit, et c'est
+   la personne qui choisit « Mettre à jour » ou « Plus tard ».
+   Jamais pendant une séance ou un minuteur qui tourne : la page
+   rechargée ne pourrait plus biper avant le prochain appui (règle des
+   navigateurs pour le son). */
+
+const MiseAJour = {
+  inscription: null,   // l'inscription du service worker
+  demandee: false,     // vrai après un appui sur « Mettre à jour »
+  repoussee: false,    // « Plus tard » : plus rien jusqu'à la prochaine ouverture
+
+  surveiller(inscription) {
+    this.inscription = inscription;
+    // Une version attendait déjà (téléchargée lors d'une visite précédente)
+    this.majBandeau();
+    inscription.addEventListener('updatefound', () => {
+      const nouveau = inscription.installing;
+      if (!nouveau) return;
+      nouveau.addEventListener('statechange', () => {
+        if (nouveau.state === 'installed') this.majBandeau();
+      });
+    });
+    // À chaque retour dans l'application, on regarde s'il y a du nouveau
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') inscription.update().catch(() => {});
+    });
+  },
+
+  prete() {
+    // Sans « controller », c'est la toute première installation : rien à proposer
+    return !!(this.inscription && this.inscription.waiting && navigator.serviceWorker.controller);
+  },
+
+  majBandeau() {
+    const occupe = Lecteur.actif() || Minuteur.etat.statut === 'marche';
+    $('#bandeau-mise-a-jour').hidden = !this.prete() || this.repoussee || occupe;
+  },
+
+  appliquer(bouton) {
+    if (!this.prete()) return;
+    this.demandee = true;
+    bouton.disabled = true;
+    ecrireTexte(bouton, 'Mise à jour…');
+    this.inscription.waiting.postMessage({ type: 'activer' });
+  },
+
+  repousser() {
+    this.repoussee = true;
+    this.majBandeau();
+    annoncer('D’accord. Omni-Time te le reproposera à la prochaine ouverture.');
+  }
+};
+
+
+/* ---------- 7. Démarrage ---------- */
 
 function demarrerApplication() {
   appliquerTheme();
@@ -300,7 +360,12 @@ function demarrerApplication() {
 
   // Mode hors ligne : on installe le service worker (fichier sw.js)
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
+    // Ce changement a aussi lieu à la toute première installation : on
+    // ne recharge que si la personne a touché « Mettre à jour ».
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (MiseAJour.demandee) location.reload();
+    });
+    navigator.serviceWorker.register('./sw.js').then((i) => MiseAJour.surveiller(i)).catch(() => {
       /* Pas de mode hors ligne (adresse en file:// par exemple) :
          l'application marche quand même tant qu'elle est ouverte. */
     });

@@ -10,7 +10,7 @@
 /* ⚠️ À augmenter d'un cran (v1 → v2…) à CHAQUE modification d'un fichier
    de la liste FICHIERS ci-dessous. Sinon, les téléphones qui ont déjà
    ouvert l'application gardent l'ancienne version. */
-const CACHE = 'omni-time-v3';
+const CACHE = 'omni-time-v4';
 
 /* Le début du nom de cache propre à Omni-Time. Toutes les applications de
    ferrusdantioch.github.io partagent la même adresse de site, donc le même
@@ -66,9 +66,14 @@ function verifierCache() {
     .catch(() => { /* hors ligne : on réessaiera à la prochaine ouverture */ });
 }
 
-/* 1. Installation : on range tout dans le cache. */
+/* 1. Installation : on range tout dans le cache.
+      Volontairement, PAS de self.skipWaiting() ici : une nouvelle version
+      attend que la personne touche « Mettre à jour » sur l'accueil (voir
+      l'étape 3). Rien ne change par surprise. Seule exception, fixée par
+      le navigateur : si Omni-Time est complètement fermée, la nouvelle
+      version est là à la prochaine ouverture. */
 self.addEventListener('install', (e) => {
-  e.waitUntil(remplirCache().then(() => self.skipWaiting()));
+  e.waitUntil(remplirCache());
 });
 
 /* 2. Activation : on supprime les anciennes versions d'Omni-Time,
@@ -83,9 +88,17 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-/* 3. Interception des requêtes : on sert d'abord le cache (instantané,
-      hors ligne), et on rafraîchit discrètement en arrière-plan si le
-      réseau répond.
+/* 3. La personne a touché « Mettre à jour » : cette version prend le
+      relais. La page le remarque (« controllerchange ») et se recharge. */
+self.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'activer') self.skipWaiting();
+});
+
+/* 4. Interception des requêtes : on sert la copie rangée dans le
+      téléphone (instantané, hors ligne). On ne va sur internet que pour
+      un fichier absent de la copie.
+      On ne remplace JAMAIS en arrière-plan un fichier déjà rangé : sinon
+      l'application changerait en douce, sans passer par « Mettre à jour ».
       ignoreSearch : une adresse avec un « ? » trouve quand même sa page. */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
@@ -96,17 +109,12 @@ self.addEventListener('fetch', (e) => {
   if (e.request.mode === 'navigate') e.waitUntil(verifierCache());
 
   e.respondWith(
-    caches.match(e.request, { ignoreSearch: true, cacheName: CACHE }).then((enCache) => {
-      const surLeReseau = fetch(e.request)
-        .then((rep) => {
-          if (rep && rep.status === 200 && rep.type === 'basic') {
-            const copie = rep.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copie));
-          }
-          return rep;
-        })
-        .catch(() => enCache);
-      return enCache || surLeReseau;
-    })
+    caches.open(CACHE).then((c) => c.match(e.request, { ignoreSearch: true }).then((enCache) => {
+      if (enCache) return enCache;
+      return fetch(e.request).then((rep) => {
+        if (rep && rep.status === 200 && rep.type === 'basic') c.put(e.request, rep.clone());
+        return rep;
+      });
+    }))
   );
 });
