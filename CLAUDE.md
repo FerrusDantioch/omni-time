@@ -60,6 +60,15 @@ Minuteur, Création / modification d'une séance, Séance en cours, Réglages,
   de `sw.js` (seulement au message `{ type: 'activer' }`), et le `fetch`
   ne remplace jamais en arrière-plan un fichier rangé dans le cache.
 
+## Champ `id` du manifeste : nom du dossier, jamais `./`
+
+`manifest.json` contient `"id": "/omni-time/"` (corrigé en novembre 2026 ; il
+valait `"./"`). Chrome lit `id` par rapport à la **racine du domaine**
+(`https://ferrusdantioch.github.io/`) : `"./"` donnait la même identité que
+toutes les applications qui l'utilisaient. Ne plus changer cette valeur :
+une application installée dont l'`id` change devient une autre application
+(il faut la désinstaller puis la réinstaller ; les données restent).
+
 ## Même adresse de site que les autres applications
 
 Refuge, Cap, L'Atelier et Omni-Time sont tous servis depuis
