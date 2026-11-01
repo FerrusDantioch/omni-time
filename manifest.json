@@ -2,7 +2,7 @@
   "name": "Omni-Time — chronomètre et intervalles",
   "short_name": "Omni-Time",
   "description": "Chronomètre, minuteur et séances d'intervalles pour la boxe, la musculation et tous les sports. Fonctionne hors ligne.",
-  "id": "./",
+  "id": "/omni-time/",
   "lang": "fr",
   "dir": "ltr",
   "start_url": "./index.html",

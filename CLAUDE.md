@@ -60,6 +60,15 @@ Minuteur, Création / modification d'une séance, Séance en cours, Réglages,
   de `sw.js` (seulement au message `{ type: 'activer' }`), et le `fetch`
   ne remplace jamais en arrière-plan un fichier rangé dans le cache.
 
+## Champ `id` du manifeste : nom du dossier, jamais `./`
+
+`manifest.json` contient `"id": "/omni-time/"` (corrigé en novembre 2026 ; il
+valait `"./"`). Chrome lit `id` par rapport à la **racine du domaine**
+(`https://ferrusdantioch.github.io/`) : `"./"` donnait la même identité que
+toutes les applications qui l'utilisaient. Ne plus changer cette valeur :
+une application installée dont l'`id` change devient une autre application
+(il faut la désinstaller puis la réinstaller ; les données restent).
+
 ## Même adresse de site que les autres applications
 
 Refuge, Cap, L'Atelier et Omni-Time sont tous servis depuis
@@ -98,6 +107,17 @@ et `VERSION` en haut d'`app.js` (numéro affiché dans À propos). En cas
 d'ajout de fichier, l'inscrire aussi dans la liste `FICHIERS` de `sw.js`.
 Garder tous les fichiers **à la racine** : l'envoi depuis un téléphone ne
 sait pas créer de dossier.
+
+## Tests
+
+`node tests/tester.js` (Playwright + Chromium, 23 vérifications ; pour le
+Chromium installé ailleurs : `CHROMIUM_PATH=…`). `tests/outils.js` = boîte à
+outils commune (même fichier dans plusieurs applications) : serveur local à
+la forme d'adresse de GitHub Pages (port libre), contrôles communs (fichiers
+du service worker présents, téléphone sans débordement, `[hidden]` respecté,
+hors ligne, aucun autre site contacté, aucune erreur JavaScript). Le dossier
+`tests/` ne sert qu'au développement : il n'est pas dans le cache et ne
+demande pas de nouvelle version.
 
 ## Tester en local
 
