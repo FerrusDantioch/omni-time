@@ -104,6 +104,29 @@ l'apparence ; Claude en a écrit le code. (C'est aussi indiqué dans la page
 Pour découvrir l'Omni-système : **le portfolio**,
 https://ferrusdantioch.github.io/omni-systeme/ (lien aussi dans « À propos »).
 
+## Tests automatiques
+
+Les tests ouvrent l’application dans un vrai navigateur, font les gestes
+d’une personne et vérifient le résultat, y compris sans internet. Ils ne
+contactent aucun site. Ils ne servent qu’au développement : l’application
+n’en a pas besoin pour fonctionner.
+
+Il faut [Node.js](https://nodejs.org) (version 22 ou plus récente), puis,
+une seule fois, dans le dossier de l’application :
+
+```
+npm install playwright
+npx playwright install chromium
+```
+
+Ensuite, à chaque fois :
+
+```
+node tests/tester.js
+```
+
+Le bilan s’affiche à la fin : « Échecs : 0 » veut dire que tout va bien.
+
 ## Licence
 
 **© 2026 Ferrus Dantioch — Creative Commons BY-NC-ND 4.0**
