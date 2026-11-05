@@ -96,9 +96,9 @@ Une idée, une gêne, quelque chose qui manque ? Écrivez à
 ## Conception
 
 Omni-Time a été développée par **Ferrus Dantioch**, avec l'aide de
-**Claude**, l'intelligence artificielle d'Anthropic : Ferrus Dantioch,
+l'**intelligence artificielle** : Ferrus Dantioch,
 créateur de l'Omni-système, en a imaginé l'idée, les fonctions et
-l'apparence ; Claude en a écrit le code. (C'est aussi indiqué dans la page
+l'apparence ; l'intelligence artificielle en a écrit le code. (C'est aussi indiqué dans la page
 « À propos » de l'application.)
 
 Pour découvrir l'Omni-système : **le portfolio**,
