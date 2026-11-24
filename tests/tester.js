@@ -297,7 +297,8 @@ lancer('Omni-Time', async () => {
       function parseRgb(str) {
         const m = str.match(/[\d.]+/g);
         if (!m) return [0, 0, 0];
-        return m.slice(0, 3).map(Number);
+        const nums = m.slice(0, 3).map(Number);
+        return /^\s*color\(\s*srgb\b/i.test(str) ? nums.map((n) => n * 255) : nums;
       }
       function lum(rgb) {
         const c = rgb.map((v) => {
