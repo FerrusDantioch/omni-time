@@ -50,7 +50,7 @@ const Lecteur = {
       this.etat.depuis = null;
       this.sauver();
     }
-    if (this.actif()) Ecran.garder('seance');
+    if (this.enMarche()) Ecran.garder('seance');
   },
 
   sauver() {
@@ -122,10 +122,12 @@ const Lecteur = {
       e.cumul = this.ecoule();
       e.depuis = null;
       Sons.annuler(this.prefixe());         // les bips à venir n'ont plus lieu d'être
+      Ecran.liberer('seance');
       annoncer('Pause');
     } else {
       Sons.deverrouiller();
       e.depuis = Date.now();
+      Ecran.garder('seance');
       annoncer('Reprise');
     }
     this.sauver();
@@ -178,6 +180,7 @@ const Lecteur = {
     Sons.oublier('S');
     this.etat = null;
     this.sauver();
+    Ecran.liberer('seance');
     revenir();
   },
 
@@ -285,6 +288,10 @@ const Lecteur = {
     return morceaux.join(' · ');
   },
 
+  majAvisSon() {
+    $('#lecteur-son').hidden = !(this.enMarche() && reglages.bips && !Sons.pret());
+  },
+
   afficher(pos) {
     const e = this.etat;
     if (!e) return;
@@ -341,6 +348,6 @@ const Lecteur = {
     const resteTotal = this.dureeTotaleMs() - this.ecoule();
     ecrireTexte($('#lecteur-reste'), formaterDuree(Math.ceil(resteTotal / 1000)));
     ecrireTexte($('#lecteur-pause'), enPause ? 'Reprendre' : 'Pause');
-    $('#lecteur-son').hidden = !(reglages.bips && !Sons.pret());
+    this.majAvisSon();
   }
 };

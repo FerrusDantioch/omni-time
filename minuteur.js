@@ -30,7 +30,7 @@ const Minuteur = {
   initialiser() {
     this.champ = creerChampDuree($('#minuteur-duree'));
     this.champ.surChangement((s) => {
-      this.etat.duree = s;
+      this.etat.duree = Math.max(1, s);
       this.sauver();
       $('#minuteur-erreur').hidden = true;
     });
@@ -149,7 +149,10 @@ const Minuteur = {
     const fin = this.etat.finA;
     const debut = fin - this.etat.duree * 1000;
     Sons.programmerFinDePhase(this.prefixe(), debut, fin, this.prefixe() + 'fin');
-    if (vueActive === 'minuteur') this.afficherTemps();
+    if (vueActive === 'minuteur') {
+      this.afficherTemps();
+      this.majAvisSon();
+    }
   },
 
   terminer() {
@@ -190,6 +193,10 @@ const Minuteur = {
     $('#minuteur-progression').style.transform = 'scaleX(' + borner(fraction, 0, 1).toFixed(4) + ')';
   },
 
+  majAvisSon() {
+    $('#minuteur-son').hidden = !(this.etat.statut === 'marche' && reglages.bips && !Sons.pret());
+  },
+
   afficher() {
     const statut = this.etat.statut;
     const reglage = statut === 'arret';
@@ -205,7 +212,7 @@ const Minuteur = {
     const arreter = $('#minuteur-arreter');
     desarmerBouton(arreter);
     ecrireTexte(arreter, statut === 'fini' ? 'Changer la durée' : 'Arrêter');
-    $('#minuteur-son').hidden = !(statut === 'marche' && reglages.bips && !Sons.pret());
+    this.majAvisSon();
     this.afficherTemps();
   }
 };

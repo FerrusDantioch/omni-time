@@ -80,16 +80,26 @@ function dureeEnMots(totalSecondes) {
 }
 
 /* Fait lire un message par le lecteur d'écran (zone invisible « annonce »). */
+let minuteurAnnonce = null;
+
 function annoncer(texte) {
   const zone = document.getElementById('annonce');
   if (!zone) return;
+  clearTimeout(minuteurAnnonce);
   zone.textContent = '';
-  setTimeout(() => { zone.textContent = texte; }, 60);
+  minuteurAnnonce = setTimeout(() => { zone.textContent = texte; }, 60);
 }
 
 /* Fabrique un identifiant unique (pour reconnaître chaque séance). */
 function nouvelId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+/* Ajoute un suffixe (« (copie) », « (2) »…) en gardant le nom dans la limite. */
+function nomAvecSuffixe(nom, suffixe, max) {
+  const limite = max || 40;
+  const base = String(nom || '').slice(0, Math.max(0, limite - suffixe.length)).trimEnd();
+  return (base + suffixe).slice(0, limite);
 }
 
 
@@ -152,31 +162,74 @@ function creerChampDuree(conteneur) {
   const libelle = conteneur.dataset.libelle || 'Durée';
   const minimum = Number(conteneur.dataset.min) || 0;
   conteneur.classList.add('duree');
-  // Le libellé vient de notre propre page (jamais de la personne) :
-  // on peut donc l'écrire directement dans le HTML.
-  conteneur.innerHTML =
-    '<button type="button" class="bouton duree-bouton" data-sens="-1" aria-label="' + libelle + ' : diminuer">−</button>' +
-    '<span class="duree-champs">' +
-      '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="duree-min" aria-label="' + libelle + ' : minutes">' +
-      '<span class="duree-sep" aria-hidden="true">:</span>' +
-      '<input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" class="duree-sec" aria-label="' + libelle + ' : secondes">' +
-    '</span>' +
-    '<button type="button" class="bouton duree-bouton" data-sens="1" aria-label="' + libelle + ' : augmenter">+</button>';
+  conteneur.textContent = '';
 
-  const champMin = $('.duree-min', conteneur);
-  const champSec = $('.duree-sec', conteneur);
+  const btnMoins = document.createElement('button');
+  btnMoins.type = 'button';
+  btnMoins.className = 'bouton duree-bouton';
+  btnMoins.dataset.sens = '-1';
+  btnMoins.setAttribute('aria-label', libelle + ' : diminuer');
+  btnMoins.textContent = '−';
+
+  const champs = document.createElement('span');
+  champs.className = 'duree-champs';
+
+  const champMin = document.createElement('input');
+  champMin.type = 'text';
+  champMin.setAttribute('inputmode', 'numeric');
+  champMin.setAttribute('pattern', '[0-9]*');
+  champMin.setAttribute('maxlength', '2');
+  champMin.className = 'duree-min';
+  champMin.setAttribute('aria-label', libelle + ' : minutes');
+
+  const sep = document.createElement('span');
+  sep.className = 'duree-sep';
+  sep.setAttribute('aria-hidden', 'true');
+  sep.textContent = ':';
+
+  const champSec = document.createElement('input');
+  champSec.type = 'text';
+  champSec.setAttribute('inputmode', 'numeric');
+  champSec.setAttribute('pattern', '[0-9]*');
+  champSec.setAttribute('maxlength', '2');
+  champSec.className = 'duree-sec';
+  champSec.setAttribute('aria-label', libelle + ' : secondes');
+
+  champs.append(champMin, sep, champSec);
+
+  const btnPlus = document.createElement('button');
+  btnPlus.type = 'button';
+  btnPlus.className = 'bouton duree-bouton';
+  btnPlus.dataset.sens = '1';
+  btnPlus.setAttribute('aria-label', libelle + ' : augmenter');
+  btnPlus.textContent = '+';
+
+  conteneur.append(btnMoins, champs, btnPlus);
+
   const ecouteurs = [];
 
-  function lire() {
+  function lireBrut() {
     const m = parseInt(champMin.value, 10) || 0;
     const s = parseInt(champSec.value, 10) || 0;
-    return borner(borner(m, 0, 99) * 60 + borner(s, 0, 59), minimum, DUREE_MAX);
+    return borner(m, 0, 99) * 60 + borner(s, 0, 59);
+  }
+
+  function lire() {
+    return lireBrut();
+  }
+
+  function lireBornee() {
+    return borner(lireBrut(), minimum, DUREE_MAX);
+  }
+
+  function formaterChamps(secondes) {
+    const s = borner(Math.round(secondes) || 0, 0, DUREE_MAX);
+    champMin.value = deuxChiffres(Math.floor(s / 60));
+    champSec.value = deuxChiffres(s % 60);
   }
 
   function ecrire(secondes) {
-    const s = borner(Math.round(secondes) || 0, minimum, DUREE_MAX);
-    champMin.value = deuxChiffres(Math.floor(s / 60));
-    champSec.value = deuxChiffres(s % 60);
+    formaterChamps(borner(Math.round(secondes) || 0, minimum, DUREE_MAX));
   }
 
   function prevenir() { ecouteurs.forEach((f) => f(lire())); }
@@ -184,7 +237,7 @@ function creerChampDuree(conteneur) {
   // Un pas en avant ou en arrière, « aimanté » sur un multiple du pas :
   // 0:07 + 5 s donne 0:10, pas 0:12.
   function avancer(sens) {
-    const actuel = lire();
+    const actuel = lireBornee();
     const pas = pasPour(actuel, sens);
     const suivant = sens > 0
       ? Math.floor(actuel / pas) * pas + pas
@@ -201,7 +254,8 @@ function creerChampDuree(conteneur) {
       prevenir();
     });
     // En quittant la case, on remet la durée au propre (ex. « 7 » → « 07 »)
-    champ.addEventListener('blur', () => { ecrire(lire()); prevenir(); });
+    // sans écraser 00:00, pour que la validation signale l'erreur au clic.
+    champ.addEventListener('blur', () => { formaterChamps(lireBrut()); prevenir(); });
     // Toucher une case sélectionne son contenu : on retape directement
     champ.addEventListener('focus', () => champ.select());
   });
@@ -241,7 +295,11 @@ function brancherAppuiLong(bouton, action) {
       repetition = setInterval(action, 120);
     }, 500);
   });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach((type) => bouton.addEventListener(type, arreter));
+  ['pointerup', 'pointerleave', 'pointercancel', 'lostpointercapture', 'blur'].forEach((type) => {
+    bouton.addEventListener(type, arreter);
+  });
+  window.addEventListener('blur', arreter);
+  bouton.addEventListener('keydown', () => { aRepete = false; });
   // Le « clic » sert pour un appui simple (et pour le clavier).
   // Après un défilement par appui long, on l'ignore une fois.
   bouton.addEventListener('click', () => {

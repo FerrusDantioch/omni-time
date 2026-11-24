@@ -43,6 +43,20 @@ const Sons = {
   contexte: null,     // le « moteur audio » du navigateur, créé au premier appui
   prevus: [],         // bips programmés : { cle, enveloppe, debut, fin }
   cles: new Set(),    // clés des bips déjà programmés (joués ou à venir)
+  _ecouteursPret: [],
+  _dejaSignalePret: false,
+
+  surPret(fn) {
+    if (typeof fn === 'function') this._ecouteursPret.push(fn);
+  },
+
+  _notifierPret() {
+    if (!this.pret() || this._dejaSignalePret) return;
+    this._dejaSignalePret = true;
+    this._ecouteursPret.forEach((fn) => {
+      try { fn(); } catch (e) { /* un écouteur ne doit pas bloquer les autres */ }
+    });
+  },
 
   /* Crée le moteur audio, ou le réveille s'il dort. À appeler pendant
      un appui de la personne : c'est la seule façon d'en avoir le droit. */
@@ -52,8 +66,21 @@ const Sons = {
         const MoteurAudio = window.AudioContext || window.webkitAudioContext;
         if (!MoteurAudio) return;        // navigateur trop ancien : pas de son
         this.contexte = new MoteurAudio();
+        if (typeof this.contexte.addEventListener === 'function') {
+          this.contexte.addEventListener('statechange', () => {
+            if (this.pret()) this._notifierPret();
+            else this._dejaSignalePret = false;
+          });
+        }
       }
-      if (this.contexte.state === 'suspended') this.contexte.resume().catch(() => {});
+      if (this.pret()) {
+        this._notifierPret();
+      } else if (this.contexte.state === 'suspended') {
+        this._dejaSignalePret = false;
+        this.contexte.resume().then(() => {
+          if (this.pret()) this._notifierPret();
+        }).catch(() => {});
+      }
     } catch (e) {
       /* Pas de son possible : l'application marche quand même. */
     }
@@ -108,8 +135,18 @@ const Sons = {
     if (!forcer && !reglages.bips) return;
     const ctx = this.contexte;
     if (!ctx) return;
-    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
-    this.fabriquer(type, ctx.currentTime + 0.01);
+    if (ctx.state === 'running') {
+      this.fabriquer(type, ctx.currentTime + 0.01);
+      return;
+    }
+    if (ctx.state === 'suspended') {
+      ctx.resume().then(() => {
+        if (this.contexte === ctx && ctx.state === 'running') {
+          this._notifierPret();
+          if (forcer || reglages.bips) this.fabriquer(type, ctx.currentTime + 0.01);
+        }
+      }).catch(() => {});
+    }
   },
 
   /* Programme un bip pour une heure précise.
@@ -125,12 +162,12 @@ const Sons = {
     // réessaiera au prochain passage de l'horloge.
     if (!ctx || ctx.state !== 'running') return;
 
-    this.cles.add(cle);
     const dans = heure - Date.now();          // négatif : l'heure est déjà passée
     if (-dans > RETARD_MAX[type]) return;     // trop tard : on ne rattrape pas
 
     const bip = this.fabriquer(type, ctx.currentTime + Math.max(0, dans) / 1000);
     if (bip) {
+      this.cles.add(cle);
       bip.cle = cle;
       this.prevus.push(bip);
     }

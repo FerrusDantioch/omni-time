@@ -46,7 +46,8 @@ et fonctionne **sans connexion** après cette première visite.
 3. Modifiez, puis **Commit changes**.
 
 **À faire à chaque modification d'un fichier de l'application** (tous sauf
-`README.md`, `GUIDE-GITHUB.md`, `CLAUDE.md`, `LICENSE` et `POLICES-OFL.txt`) :
+`.nojekyll`, `README.md`, `GUIDE-GITHUB.md`, `CLAUDE.md`, `LICENSE`,
+`POLICES-OFL.txt`, et les dossiers `tests/` et `.github/`) :
 ouvrez `sw.js` et augmentez la version d'un cran, tout en haut. Partez du
 numéro qui y figure :
 
@@ -69,12 +70,15 @@ Comptez 1 à 2 minutes après chaque commit pour que GitHub Pages republie.
    automatiquement : il n'y a rien à supprimer. Tous les fichiers sont à la
    racine : aucun dossier à créer.
 4. **Commit changes**, puis attendez 1 à 2 minutes.
-5. Sur le téléphone, ouvrez l'application et **fermez-la complètement**
-   (bouton carré d'Android → balayer la fenêtre), puis rouvrez-la. La
-   nouvelle version s'installe au second lancement.
+5. Sur le téléphone, ouvrez l'application : un bandeau **« Une nouvelle
+   version d'Omni-Time est prête »** apparaît sur l'accueil. Touchez
+   **Mettre à jour** pour l'activer tout de suite (ou **Plus tard** ; si vous
+   fermez complètement l'application, la nouvelle version s'installe à
+   l'ouverture suivante).
 
 Vos séances et vos réglages ne sont pas touchés : ils vivent dans le
-téléphone, pas dans les fichiers du dépôt.
+téléphone, pas dans les fichiers du dépôt. Vous pouvez aussi exporter vos
+séances en JSON dans les **Réglages** (bloc *Sauvegarde*) par sécurité.
 
 ---
 
@@ -83,7 +87,7 @@ téléphone, pas dans les fichiers du dépôt.
 | Symptôme | Cause probable | Solution |
 |---|---|---|
 | Erreur 404 | Pages pas encore publié | Attendre 2 min, recharger |
-| Page blanche ou sans style | Un fichier manquant | Vérifier que les 20 fichiers de l'application sont à la racine du dépôt |
+| Page blanche ou sans style | Un fichier manquant | Vérifier que tous les fichiers listés dans `FICHIERS` de `sw.js` sont à la racine du dépôt |
 | Pas de « Ajouter à l'écran d'accueil » | Adresse en `http://` | L'adresse GitHub Pages est en `https://`, vérifiez-la |
 | Une modification n'apparaît pas | Cache du service worker | Augmenter `CACHE` dans `sw.js` |
 | Pas de bip | Son du téléphone coupé, ou aucun appui depuis l'ouverture | Monter le volume du téléphone ; toucher l'écran une fois |

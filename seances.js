@@ -93,7 +93,7 @@ const Seances = {
     if (index < 0) return;
     const copie = nettoyerSeance(Object.assign({}, seances[index], {
       id: nouvelId(),
-      nom: (seances[index].nom + ' (copie)').slice(0, 40)
+      nom: nomAvecSuffixe(seances[index].nom, ' (copie)', 40)
     }));
     seances.splice(index + 1, 0, copie);   // la copie se range juste après l'original
     enregistrerSeances();
@@ -155,7 +155,10 @@ const Editeur = {
   initialiser() {
     $$('[data-champ]').forEach((conteneur) => {
       const champ = creerChampDuree(conteneur);
-      champ.surChangement(() => this.majTotal());
+      champ.surChangement(() => {
+        $('#edition-erreur').hidden = true;
+        this.majTotal();
+      });
       this.champs[conteneur.dataset.champ] = champ;
     });
 
@@ -253,7 +256,9 @@ const Editeur = {
     }
     if (this.idEnCours) {
       const index = seances.findIndex((s) => s.id === this.idEnCours);
-      if (index >= 0) seances[index] = nettoyerSeance(Object.assign({ id: this.idEnCours }, donnees));
+      const modifiee = nettoyerSeance(Object.assign({ id: this.idEnCours }, donnees));
+      if (index >= 0) seances[index] = modifiee;
+      else seances.push(modifiee);
     } else {
       seances.push(nettoyerSeance(Object.assign({ id: nouvelId() }, donnees)));
     }

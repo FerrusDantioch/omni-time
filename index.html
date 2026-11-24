@@ -8,28 +8,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-src 'none'">
 <title>Omni-Time</title>
 <meta name="description" content="Omni-Time — chronomètre, minuteur et séances d'intervalles pour la boxe, la musculation et tous les sports. Fonctionne hors ligne.">
 <meta name="theme-color" content="#14111d">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Omni-Time">
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" href="./icon-192.png">
-<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 
 <!-- Pose le thème choisi AVANT le premier affichage : sans cela, l'écran
      s'allumerait une fraction de seconde avec les couleurs par défaut
      (un éclair clair, désagréable dans le noir). app.js refait la même
      chose ensuite. -->
-<script>
-(function () {
-  var t = 'omni';
-  try {
-    var r = JSON.parse(localStorage.getItem('omnitime_reglages')) || {};
-    if (r.theme === 'omni' || r.theme === 'sombre' || r.theme === 'clair') t = r.theme;
-  } catch (e) { /* rien d'enregistré, ou stockage refusé : thème par défaut */ }
-  document.documentElement.dataset.theme = t;
-})();
-</script>
+<script src="./theme.js"></script>
 
 <link rel="stylesheet" href="./styles.css">
 
@@ -362,6 +358,16 @@
     <p>Remets les séances Boxe, Tabata et Musculation dans ta liste. Tes séances actuelles ne sont pas touchées.</p>
     <button type="button" class="bouton large" data-action="rajouter-modeles">Remettre les modèles</button>
     <p id="modeles-message" class="aide" role="status" hidden>Modèles ajoutés à ta liste.</p>
+  </div>
+
+  <div class="bloc">
+    <p class="etiquette">Sauvegarde</p>
+    <p>Enregistre tes séances dans un fichier JSON pour les sauvegarder ou les transférer, sans rien perdre de tes séances actuelles.</p>
+    <button type="button" class="bouton large" data-action="exporter-seances">Exporter les séances (JSON)</button>
+    <button type="button" class="bouton large" data-action="importer-seances">Importer des séances (JSON)</button>
+    <input type="file" id="import-seances-fichier" accept=".json,application/json" hidden>
+    <p id="sauvegarde-message" class="aide" role="status" hidden></p>
+    <p id="sauvegarde-erreur" class="erreur" role="alert" hidden></p>
   </div>
 </section>
 
