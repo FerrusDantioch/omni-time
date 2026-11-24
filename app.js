@@ -12,7 +12,7 @@
 
 /* Numéro de version affiché dans « À propos ». À changer à chaque
    nouvelle version publiée (en même temps que CACHE dans sw.js). */
-const VERSION = '1.0.5';
+const VERSION = '1.1.0';
 
 /* ---------- 1. Navigation entre les écrans ----------
    Chaque écran est une <section class="vue" data-vue="…">.
@@ -182,6 +182,43 @@ const Reglages = {
         + 'Le temps reste juste quand tu le rallumes.';
     }
     ecrireTexte($('#numero-version'), 'Version ' + VERSION);
+
+    const entreeImport = $('#import-seances-fichier');
+    if (entreeImport) {
+      entreeImport.addEventListener('change', async () => {
+        const fichier = entreeImport.files && entreeImport.files[0];
+        const message = $('#sauvegarde-message');
+        const erreur = $('#sauvegarde-erreur');
+        clearTimeout(message._minuteur);
+        message.hidden = true;
+        erreur.hidden = true;
+        if (!fichier) return;
+        try {
+          if (fichier.size > TAILLE_IMPORT_MAX) {
+            erreur.textContent = 'Ce fichier est trop volumineux (maximum 512 Ko).';
+            erreur.hidden = false;
+            return;
+          }
+          const texte = await fichier.text();
+          const resultat = importerSeancesDepuisTexte(texte);
+          if (!resultat.ok) {
+            erreur.textContent = resultat.erreur;
+            erreur.hidden = false;
+            return;
+          }
+          Seances.afficherListe();
+          message.textContent = resultat.message;
+          message.hidden = false;
+          message._minuteur = setTimeout(() => { message.hidden = true; }, 6000);
+          annoncer(resultat.message);
+        } catch (e) {
+          erreur.textContent = 'Impossible de lire ce fichier.';
+          erreur.hidden = false;
+        } finally {
+          entreeImport.value = '';
+        }
+      });
+    }
   },
 
   afficher() {
@@ -266,8 +303,78 @@ document.addEventListener('click', (e) => {
       Seances.rajouterModeles();
       const message = $('#modeles-message');
       message.hidden = false;
-      setTimeout(() => { message.hidden = true; }, 4000);
+      clearTimeout(message._minuteur);
+      message._minuteur = setTimeout(() => { message.hidden = true; }, 4000);
       break;
+    }
+    case 'exporter-seances': {
+      const message = $('#sauvegarde-message');
+      $('#sauvegarde-erreur').hidden = true;
+      exporterSeancesJson();
+      const texte = seances.length + (seances.length > 1 ? ' séances exportées.' : ' séance exportée.');
+      message.textContent = texte;
+      message.hidden = false;
+      clearTimeout(message._minuteur);
+      message._minuteur = setTimeout(() => { message.hidden = true; }, 6000);
+      annoncer(texte);
+      break;
+    }
+    case 'importer-seances': {
+      $('#sauvegarde-erreur').hidden = true;
+      $('#import-seances-fichier').click();
+      break;
+    }
+  }
+});
+
+
+/* ---------- 5b. Raccourcis clavier ---------- */
+
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
+
+  const cible = e.target;
+  const el = (cible && typeof cible.closest === 'function') ? cible : null;
+  const estEdition = !!(el && el.closest('input, textarea, select, [contenteditable]'));
+  const estInteractif = !!(el && el.closest('input, textarea, select, [contenteditable], button, a, summary, [role="button"], [role="switch"]'));
+
+  if (e.key === 'Escape') {
+    const armes = $$('.vue:not([hidden]) .bouton.arme');
+    if (armes.length > 0) {
+      e.preventDefault();
+      armes.forEach(desarmerBouton);
+      return;
+    }
+    if (vueActive !== 'accueil') {
+      e.preventDefault();
+      revenir();
+    }
+    return;
+  }
+
+  if (e.repeat) return;
+
+  if (e.code === 'Space' || e.key === ' ') {
+    if (estInteractif) return;
+    if (vueActive === 'chrono') {
+      e.preventDefault();
+      Chrono.basculer();
+    } else if (vueActive === 'minuteur') {
+      e.preventDefault();
+      if (Minuteur.etat.statut === 'arret') Minuteur.demarrer();
+      else Minuteur.basculer();
+    } else if (vueActive === 'seance' && Lecteur.actif()) {
+      e.preventDefault();
+      Lecteur.basculerPause();
+    }
+    return;
+  }
+
+  if ((e.key === 't' || e.key === 'T') && !estEdition) {
+    if (vueActive === 'chrono' && Chrono.enMarche()) {
+      e.preventDefault();
+      Chrono.tour();
     }
   }
 });
@@ -333,6 +440,12 @@ const MiseAJour = {
 
 function demarrerApplication() {
   appliquerTheme();
+  demanderStockagePersistant();
+
+  Sons.surPret(() => {
+    if (vueActive === 'minuteur') Minuteur.majAvisSon();
+    if (vueActive === 'seance' && Lecteur.actif()) Lecteur.majAvisSon();
+  });
 
   // Préparation des écrans (une seule fois)
   Editeur.initialiser();

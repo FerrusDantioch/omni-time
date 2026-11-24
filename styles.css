@@ -94,6 +94,7 @@ html[data-theme="omni"] {
   /* Lueur discrète autour des gros chiffres, comme l'anneau du logo
      (la « lueur douce » de L'Atelier) */
   --lueur-force: 22%;
+  --bord-bouton: #88809b;
 
   color-scheme: dark;
 }
@@ -130,6 +131,7 @@ html[data-theme="sombre"] {
   --rayon-carte:  16px;
   --rayon-bouton: 14px;
   --lueur-force: 0%;
+  --bord-bouton: #7d8792;
   color-scheme: dark;
 }
 
@@ -166,17 +168,25 @@ html[data-theme="clair"] {
   --rayon-carte:  16px;
   --rayon-bouton: 14px;
   --lueur-force: 0%;
+  --bord-bouton: #7e838a;
   color-scheme: light;
 }
 
 /* Valeurs communes à tous les thèmes */
 :root {
-  /* Bord des boutons : à mi-chemin entre le texte secondaire et le fond,
-     pour qu'on voie bien où appuyer, sans trait éblouissant. */
-  --bord-bouton: color-mix(in srgb, var(--discret) 45%, var(--fond));
   /* Force de la teinte de phase sur le panneau de séance (voir partie 8) */
   --teinte-phase: 9%;
   --duree: 400ms;           /* toutes les transitions, volontairement lentes */
+}
+/* Bord des boutons : contraste >= 3:1 dans les trois thèmes, avec replis
+   ci-dessus si color-mix() n'est pas pris en charge. */
+@supports (color: color-mix(in srgb, red, blue)) {
+  :root,
+  html[data-theme="omni"],
+  html[data-theme="sombre"],
+  html[data-theme="clair"] {
+    --bord-bouton: color-mix(in srgb, var(--discret) 80%, var(--fond));
+  }
 }
 /* En clair, une teinte plus légère garde les chiffres au-dessus de 5:1 */
 html[data-theme="clair"] { --teinte-phase: 5%; }
@@ -453,6 +463,7 @@ small, .aide { color: var(--discret); font-size: 0.92rem; }
 .chiffres-geants {
   font-size: min(29vw, 40vh);
   color: var(--phase);
+  text-shadow: none;
   text-shadow: 0 0 14px color-mix(in srgb, var(--phase) var(--lueur-force), transparent);
   transition: color var(--duree), opacity var(--duree);
 }
@@ -478,6 +489,7 @@ small, .aide { color: var(--discret); font-size: 0.92rem; }
   gap: 14px;
   padding: 16px 14px;
   text-align: center;
+  background: var(--surface);
   background: color-mix(in srgb, var(--phase) var(--teinte-phase), var(--fond));
   border-radius: 18px;
   transition: background-color var(--duree);

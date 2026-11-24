@@ -33,6 +33,13 @@ compte** et **sans traceur**. Toutes les données restent sur le téléphone.
   chronomètre ou le minuteur tournent.
 - **Trois thèmes** : Omni-système (par défaut), Sombre, Clair. Le choix est
   mémorisé.
+- **Sauvegarde (Export / Import JSON)** dans les Réglages : exportez toutes
+  vos séances dans un fichier `.json` et réimportez-les sans écraser les
+  séances existantes.
+- **Raccourcis clavier** : `Espace` (démarrer / pause / reprendre sur le
+  chronomètre, le minuteur et la séance), `T` (ajouter un tour au
+  chronomètre), `Échap` (désarmer un bouton de confirmation, ou revenir à
+  l'accueil).
 
 ## Les fichiers
 
@@ -42,10 +49,11 @@ pouvoir les envoyer depuis un téléphone.
 | Fichier | Rôle |
 |---|---|
 | `index.html` | Les écrans et **tous les textes affichés** |
+| `theme.js` | Pose le thème choisi avant le premier affichage (sans script en ligne) |
 | `styles.css` | Couleurs des trois thèmes (tout en haut), tailles, mise en page |
-| `app.js` | Le chef d'orchestre : navigation, réglages, horloge commune, numéro de version |
+| `app.js` | Le chef d'orchestre : navigation, réglages, raccourcis, horloge commune, numéro de version |
 | `outils.js` | Petits outils : mise en forme des durées, boutons « deux appuis », réglages de durée |
-| `stockage.js` | Ce qui est enregistré dans le téléphone, réglages par défaut, modèles |
+| `stockage.js` | Ce qui est enregistré dans le téléphone, réglages par défaut, modèles, export/import JSON |
 | `sons.js` | Les bips (fabriqués par le navigateur) et les vibrations |
 | `ecran.js` | Garder l'écran allumé |
 | `intervalles.js` | Le calcul d'une séance (suite des phases) |
@@ -55,11 +63,13 @@ pouvoir les envoyer depuis un téléphone.
 | `lecteur.js` | L'écran de la séance en cours |
 | `sw.js` | Le mode hors ligne (numéro de version du cache tout en haut) |
 | `manifest.json` | Nom, couleurs et icônes de l'application installée |
-| `icon-192.png` `icon-512.png` `maskable-512.png` | Les icônes |
+| `icon-192.png` `icon-512.png` `maskable-512.png` `apple-touch-icon.png` | Les icônes (dont l'icône iOS opaque 180×180) |
 | `oxanium.woff2` `literata.woff2` `jetbrains-mono.woff2` | Les polices du thème Omni-système |
+| `.nojekyll` | Indique à GitHub Pages de servir les fichiers tels quels |
 | `LICENSE` | La licence du code |
 | `POLICES-OFL.txt` | La licence des polices |
 | `GUIDE-GITHUB.md` | Publier et modifier l'application depuis un téléphone |
+| `tests/` `.github/workflows/ci.yml` | Contrôles statiques, tests Playwright et intégration continue (non requis pour exécuter l'application) |
 
 Tout le code est commenté en français.
 
@@ -85,7 +95,8 @@ ralentie au même moment.
   l'écran une fois pour réactiver les bips (règle des navigateurs). Un
   message le rappelle.
 - Vider le cache ou les données du site dans Chrome efface les séances
-  enregistrées.
+  enregistrées : utilisez **Exporter les séances (JSON)** dans les Réglages
+  pour en conserver une copie.
 
 ## Donner votre avis
 
@@ -111,11 +122,20 @@ d’une personne et vérifient le résultat, y compris sans internet. Ils ne
 contactent aucun site. Ils ne servent qu’au développement : l’application
 n’en a pas besoin pour fonctionner.
 
-Il faut [Node.js](https://nodejs.org) (version 22 ou plus récente), puis,
-une seule fois, dans le dossier de l’application :
+Il faut [Node.js](https://nodejs.org) (version 22 ou plus récente). Les
+contrôles statiques (CSP, `.nojekyll`, cohérence réciproque du service worker
+et des ressources, syntaxe JavaScript) ne demandent aucune dépendance :
 
 ```
-npm install playwright
+node tests/verifier-statique.mjs
+```
+
+Pour la suite E2E complète (tours, CRUD séances, `reload()`, vue paysage,
+export/import JSON, bandeaux son, raccourcis clavier, Wake Lock, mode hors
+ligne), installez Playwright une seule fois dans le dossier de l’application :
+
+```
+npm install --no-save playwright
 npx playwright install chromium
 ```
 

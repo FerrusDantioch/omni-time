@@ -126,7 +126,9 @@ const Chrono = {
     const liste = $('#chrono-tours');
     const tours = this.etat.tours;
     $('#chrono-titre-tours').hidden = tours.length === 0;
-    if (liste.childElementCount === tours.length) return;   // rien de neuf
+    const signature = tours.join('|');
+    if (liste.dataset.signature === signature && liste.childElementCount === tours.length) return;   // rien de neuf
+    liste.dataset.signature = signature;
     liste.textContent = '';
     // Le plus récent en haut
     for (let i = tours.length - 1; i >= 0; i--) {

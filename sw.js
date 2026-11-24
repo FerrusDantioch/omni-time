@@ -10,7 +10,7 @@
 /* ⚠️ À augmenter d'un cran (v1 → v2…) à CHAQUE modification d'un fichier
    de la liste FICHIERS ci-dessous. Sinon, les téléphones qui ont déjà
    ouvert l'application gardent l'ancienne version. */
-const CACHE = 'omni-time-v6';
+const CACHE = 'omni-time-v7';
 
 /* Le début du nom de cache propre à Omni-Time. Toutes les applications de
    ferrusdantioch.github.io partagent la même adresse de site, donc le même
@@ -24,6 +24,7 @@ const PREFIXE = 'omni-time-';
 const FICHIERS = [
   './',
   './index.html',
+  './theme.js',
   './styles.css',
   './outils.js',
   './stockage.js',
@@ -39,6 +40,7 @@ const FICHIERS = [
   './icon-192.png',
   './icon-512.png',
   './maskable-512.png',
+  './apple-touch-icon.png',
   './oxanium.woff2',
   './literata.woff2',
   './jetbrains-mono.woff2'
@@ -114,6 +116,11 @@ self.addEventListener('fetch', (e) => {
       return fetch(e.request).then((rep) => {
         if (rep && rep.status === 200 && rep.type === 'basic') c.put(e.request, rep.clone());
         return rep;
+      }).catch((err) => {
+        if (e.request.mode === 'navigate') {
+          return c.match('./index.html').then((accueil) => accueil || c.match('./') || Promise.reject(err));
+        }
+        throw err;
       });
     }))
   );
