@@ -50,31 +50,48 @@ test('1. Hygiène GitHub Pages : .nojekyll présent à la racine', () => {
 });
 
 test('2. CSP stricte et zéro code en ligne / innerHTML', () => {
-  const htmlBrut = lire('index.html');
-  const cspMatch = htmlBrut.match(/<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
+  const html = sansCommentairesHtml(lire('index.html'));
+  const cspMatch = html.match(/<meta\s+http-equiv=["']Content-Security-Policy["'][^>]*\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i);
   assert.ok(cspMatch, 'Balise meta Content-Security-Policy manquante dans index.html');
 
   const csp = cspMatch[1] ?? cspMatch[2] ?? '';
-  const attendues = [
-    "default-src 'self'",
-    "script-src 'self'",
-    "style-src 'self'",
-    "img-src 'self'",
-    "font-src 'self'",
-    "connect-src 'self'",
-    "object-src 'none'",
-    "base-uri 'none'",
-    "form-action 'none'",
-    "frame-src 'none'"
-  ];
-  for (const directive of attendues) {
-    assert.ok(csp.includes(directive), `Directive CSP manquante : ${directive}`);
-  }
-  for (const interdit of ["'unsafe-inline'", "'unsafe-eval'", '*', 'http:', 'https:']) {
-    assert.ok(!csp.includes(interdit), `Jeton CSP interdit trouvé : ${interdit}`);
+  const directives = new Map();
+  for (const morceau of csp.split(';')) {
+    const propre = morceau.trim();
+    if (!propre) continue;
+    const jetons = propre.split(/\s+/);
+    const nom = jetons[0].toLowerCase();
+    const valeur = jetons.slice(1).join(' ');
+    assert.ok(!directives.has(nom), `Directive CSP dupliquée : ${nom}`);
+    directives.set(nom, valeur);
   }
 
-  const html = sansCommentairesHtml(htmlBrut);
+  const attendues = [
+    ['default-src', "'self'"],
+    ['script-src', "'self'"],
+    ['style-src', "'self'"],
+    ['img-src', "'self'"],
+    ['font-src', "'self'"],
+    ['connect-src', "'self'"],
+    ['object-src', "'none'"],
+    ['base-uri', "'none'"],
+    ['form-action', "'none'"],
+    ['frame-src', "'none'"]
+  ];
+  for (const [nom, valeur] of attendues) {
+    assert.equal(directives.get(nom), valeur, `Directive CSP attendue : ${nom} ${valeur}`);
+  }
+  const interdits = ["'unsafe-inline'", "'unsafe-eval'", "'unsafe-hashes'", '*', 'http:', 'https:', 'data:', 'blob:'];
+  for (const [nom, valeur] of directives) {
+    const jetons = valeur.split(/\s+/).filter(Boolean).map((j) => j.toLowerCase());
+    for (const interdit of interdits) {
+      assert.ok(
+        !jetons.includes(interdit) && !valeur.toLowerCase().includes(interdit),
+        `Jeton CSP interdit trouvé dans ${nom} : ${interdit}`
+      );
+    }
+  }
+
   assert.ok(!/<style[\s>]/i.test(html), 'Balise <style> en ligne interdite dans index.html');
   assert.ok(!/\sstyle\s*=/i.test(html), 'Attribut style= interdit dans index.html');
   assert.ok(!/\son[a-z]+\s*=/i.test(html), 'Attribut on*= interdit dans index.html');
@@ -181,19 +198,61 @@ test('5. Icône iOS apple-touch-icon.png opaque 180x180 RGB', () => {
   assert.ok(!buf.includes(Buffer.from('tRNS')), 'apple-touch-icon.png ne doit pas contenir de chunk tRNS');
 });
 
+function analyserEnTeteSupports(texte) {
+  const idx = texte.search(/@supports\b/i);
+  if (idx < 0) return { complet: false, estColorMix: false, reste: '' };
+  const apres = texte.slice(idx + '@supports'.length);
+  let profParen = 0;
+  let dansCondition = false;
+  for (let j = 0; j < apres.length; j++) {
+    const ch = apres[j];
+    if (ch === '(') {
+      dansCondition = true;
+      profParen++;
+    } else if (ch === ')') {
+      if (profParen > 0) profParen--;
+    } else if (ch === '{' && (!dansCondition || profParen === 0)) {
+      const condition = apres.slice(0, j);
+      return {
+        complet: true,
+        estColorMix: /\bcolor-mix\s*\(/i.test(condition),
+        reste: apres.slice(j)
+      };
+    }
+  }
+  return { complet: false, estColorMix: false, reste: '' };
+}
+
 test('6. Replis CSS avant color-mix() dans styles.css', () => {
   const css = sansCommentairesCss(lire('styles.css'));
   const lignes = css.split(/\r?\n/);
+  let enTeteSupports = null;
   let dansSupportsColorMix = false;
   let profondeur = 0;
 
   for (let i = 0; i < lignes.length; i++) {
     const l = lignes[i];
-    if (!dansSupportsColorMix && /@supports\s*\([^)]*color-mix\(/i.test(l)) {
-      dansSupportsColorMix = true;
-      profondeur = 0;
+    if (!dansSupportsColorMix && enTeteSupports === null && /@supports\b/i.test(l)) {
+      enTeteSupports = l;
+    } else if (enTeteSupports !== null) {
+      enTeteSupports += '\n' + l;
     }
-    if (dansSupportsColorMix) {
+
+    if (enTeteSupports !== null) {
+      const analyse = analyserEnTeteSupports(enTeteSupports);
+      if (!analyse.complet) continue;
+      enTeteSupports = null;
+      if (analyse.estColorMix) {
+        dansSupportsColorMix = true;
+        profondeur = 0;
+        for (const ch of analyse.reste) {
+          if (ch === '{') profondeur++;
+          else if (ch === '}') profondeur--;
+        }
+        if (profondeur <= 0) dansSupportsColorMix = false;
+        continue;
+      }
+    } else if (dansSupportsColorMix) {
       for (const ch of l) {
         if (ch === '{') profondeur++;
         else if (ch === '}') profondeur--;
@@ -201,11 +260,14 @@ test('6. Replis CSS avant color-mix() dans styles.css', () => {
       if (profondeur <= 0 && l.includes('}')) dansSupportsColorMix = false;
       continue;
     }
+
     if (l.includes('color-mix(')) {
       const mProp = l.match(/^\s*([a-z-]+)\s*:/i);
       assert.ok(mProp, `Déclaration color-mix() inattendue ligne ${i + 1}`);
       const prop = mProp[1];
-      const prec = lignes[i - 1] || '';
+      let j = i - 1;
+      while (j >= 0 && lignes[j].trim() === '') j--;
+      const prec = j >= 0 ? lignes[j] : '';
       assert.ok(
         new RegExp(`^\\s*${prop}\\s*:`).test(prec) && !prec.includes('color-mix('),
         `Repli manquant avant color-mix() pour ${prop} (ligne ${i + 1})`

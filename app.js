@@ -335,8 +335,9 @@ document.addEventListener('keydown', (e) => {
   if (document.querySelector('dialog[open], [aria-modal="true"]')) return;
 
   const cible = e.target;
-  const estEdition = !!(cible && cible.closest('input, textarea, select, [contenteditable]'));
-  const estInteractif = !!(cible && cible.closest('input, textarea, select, [contenteditable], button, a, summary, [role="button"], [role="switch"]'));
+  const el = (cible && typeof cible.closest === 'function') ? cible : null;
+  const estEdition = !!(el && el.closest('input, textarea, select, [contenteditable]'));
+  const estInteractif = !!(el && el.closest('input, textarea, select, [contenteditable], button, a, summary, [role="button"], [role="switch"]'));
 
   if (e.key === 'Escape') {
     const armes = $$('.vue:not([hidden]) .bouton.arme');

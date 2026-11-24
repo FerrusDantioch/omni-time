@@ -187,7 +187,7 @@ lancer('Omni-Time', async () => {
     // Persistance au reload() : thème + tour chrono + séance
     await aller(page, '[data-aller="reglages"]');
     await page.click('input[name="theme"][value="sombre"]', { force: true });
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
     await aller(page, '#tuile-chrono');
     await page.click('#chrono-marche');
     await page.waitForTimeout(150);
@@ -197,9 +197,11 @@ lancer('Omni-Time', async () => {
     await page.waitForLoadState('load');
     await page.waitForTimeout(400);
     verifier((await page.evaluate(() => document.documentElement.dataset.theme)) === 'sombre', 'thème sombre conservé après reload()');
+    verifier((await page.$$('#chrono-tours li')).length === 1, 'tour du chronomètre conservé après reload()');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
     verifier((await page.$$eval('#liste-seances .seance-nom', (els) => els.map((e) => e.textContent))).includes(nomLong), 'séance créée conservée après reload()');
     await aller(page, '#tuile-chrono');
-    verifier((await page.$$('#chrono-tours li')).length === 1, 'tour du chronomètre conservé après reload()');
+    verifier((await page.$$('#chrono-tours li')).length === 1, 'tour du chronomètre toujours affiché après retour');
     await c.close();
   });
 
@@ -218,7 +220,7 @@ lancer('Omni-Time', async () => {
     await page.click('#minuteur-duree [data-sens="-1"]');
     const secBorne = await page.$eval('#minuteur-duree .duree-sec', (i) => i.value);
     verifier(secBorne === '01', 'bouton [−] borne toujours à 00:01', secBorne);
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
 
     // Éditeur Travail 00:00
     await aller(page, '[data-action="nouvelle-seance"]');
@@ -229,7 +231,7 @@ lancer('Omni-Time', async () => {
     verifier((await page.evaluate(() => document.body.dataset.vue)) === 'edition', 'reste sur édition en cas d’erreur');
     await page.fill('[data-champ="travail"] .duree-sec', '20');
     verifier(await estCache(page, '#edition-erreur'), 'modifier la durée masque #edition-erreur');
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
 
     // Appui long arrêté par blur + double-clic rajouter-modeles
     await page.clock.install();
@@ -243,7 +245,7 @@ lancer('Omni-Time', async () => {
     await page.clock.runFor(600);
     const valeurApresBlur = await page.$eval('#minuteur-duree .duree-sec', (i) => i.value);
     verifier(Number(valeurApresAppuiLong) > 30 && valeurApresAppuiLong === valeurApresBlur, 'blur arrête la répétition de l’appui long', [valeurApresAppuiLong, valeurApresBlur]);
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
 
     await aller(page, '[data-aller="reglages"]');
     await page.click('[data-action="rajouter-modeles"]');
@@ -266,14 +268,14 @@ lancer('Omni-Time', async () => {
 
     await aller(page, '#tuile-chrono');
     verifier((await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, 'paysage : chrono sans débordement');
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
 
     await aller(page, '#tuile-minuteur');
     await page.click('[data-action="minuteur-demarrer"]');
     verifier((await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)) <= 0, 'paysage : minuteur en marche sans débordement');
     await page.click('#minuteur-arreter');
     await page.click('#minuteur-arreter');
-    await aller(page, '[data-action="retour"]');
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
 
     await aller(page, '#liste-seances [data-action="demarrer"]');
     const grille = await page.evaluate(() => {
@@ -299,7 +301,7 @@ lancer('Omni-Time', async () => {
       }
       function lum(rgb) {
         const c = rgb.map((v) => {
-          const s = v > 1 ? v / 255 : v;
+          const s = v / 255;
           return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
         });
         return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
@@ -313,7 +315,7 @@ lancer('Omni-Time', async () => {
         return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
       }
       const res = {};
-      const btn = document.querySelector('[data-action="retour"]');
+      const btn = document.querySelector('.vue:not([hidden]) [data-action="retour"]');
       for (const theme of ['omni', 'sombre', 'clair']) {
         document.documentElement.dataset.theme = theme;
         const styleRoot = getComputedStyle(document.documentElement);
@@ -413,6 +415,7 @@ lancer('Omni-Time', async () => {
     await page.reload();
     await page.waitForLoadState('load');
     await page.waitForTimeout(400);
+    await aller(page, '.vue:not([hidden]) [data-action="retour"]');
     const nomsImportes = await page.$$eval('#liste-seances .seance-nom', (els) => els.map((e) => e.textContent));
     verifier(nomsImportes.includes('Séance importée') && nomsImportes.length === 5, 'séances importées fusionnées et conservées après reload()', nomsImportes);
     await c.close();

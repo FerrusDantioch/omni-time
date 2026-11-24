@@ -75,7 +75,7 @@ const Sons = {
       }
       if (this.pret()) {
         this._notifierPret();
-      } else if (this.contexte.state === 'suspended') {
+      } else if (this.contexte.state === 'suspended' || this.contexte.state === 'interrupted') {
         this._dejaSignalePret = false;
         this.contexte.resume().then(() => {
           if (this.pret()) this._notifierPret();
@@ -139,7 +139,7 @@ const Sons = {
       this.fabriquer(type, ctx.currentTime + 0.01);
       return;
     }
-    if (ctx.state === 'suspended') {
+    if (ctx.state === 'suspended' || ctx.state === 'interrupted') {
       ctx.resume().then(() => {
         if (this.contexte === ctx && ctx.state === 'running') {
           this._notifierPret();
